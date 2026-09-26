@@ -1,19 +1,3 @@
-function getTodayAndNextTwoDates(): string[] {
-  const today = new Date();
-  const pad = (n: number) => n.toString().padStart(2, '0');
-  const format = (d: Date) =>
-    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-  return [
-    format(today),
-    format(
-      new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
-    ),
-    format(
-      new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2),
-    ),
-  ];
-}
-
 import { useEffect, useState } from 'react';
 import {
   StatusBar,
@@ -23,6 +7,7 @@ import {
   View,
   Platform,
   PermissionsAndroid,
+  ScrollView,
 } from 'react-native';
 import { NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -32,8 +17,33 @@ import notifee, {
   AndroidImportance,
   AndroidColor,
 } from '@notifee/react-native';
+import FestivalCalendar from './src/components/FestivalCalendar';
 import WidgetView from './src/components/WidgetView';
 import language from './src/languages/selected';
+import {
+  FestivalDay,
+  isoDateFromDate,
+  parseFestivalDay,
+} from './src/utils/festivals';
+
+function getTodayAndNextTwoDates(): string[] {
+  const today = new Date();
+  return [
+    isoDateFromDate(today),
+    isoDateFromDate(
+      new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
+    ),
+    isoDateFromDate(
+      new Date(today.getFullYear(), today.getMonth(), today.getDate() + 2),
+    ),
+  ];
+}
+
+const allFestivalDays: FestivalDay[] = (
+  require('./assets/festivals.json') as unknown[]
+)
+  .map(parseFestivalDay)
+  .filter((day): day is FestivalDay => day !== null);
 
 // Helper to create channel and schedule notification for 6 AM
 async function setupNotifee(todayFestivals: string[]) {
@@ -82,7 +92,7 @@ async function setupNotifee(todayFestivals: string[]) {
   };
   await notifee.createTriggerNotification(
     {
-      title: 'Telugu Festival Reminder',
+      title: language.notificationTitle,
       body: message,
       android: {
         channelId: 'festival-reminder',
@@ -96,24 +106,18 @@ async function setupNotifee(todayFestivals: string[]) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: 'transparent' },
+  container: { flex: 1 },
+  content: { padding: 16, paddingBottom: 32 },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 18,
     marginTop: 12,
     textAlign: 'center',
-    color: '#222',
     letterSpacing: 0.5,
   },
+  errorText: { color: '#b91c1c', marginBottom: 12, textAlign: 'center' },
 });
-
-type FestivalDay = {
-  date: string;
-  Thidi: string;
-  year: string;
-  festivals: string[];
-};
 
 const App = () => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -141,16 +145,10 @@ const App = () => {
         }
       }
       try {
-        // Use require to load the bundled JSON asset. Expect 'festivals.json' to be present.
-        let allDays: FestivalDay[] = require('./assets/festivals.json');
         const wantedDates = getTodayAndNextTwoDates();
-        // Extract the (YYYY-MM-DD) part from the date string in JSON
-        // Only show the current day
-        const today = allDays.filter(day => {
-          const match = day.date.match(/\((\d{4}-\d{2}-\d{2})\)/);
-          if (!match) return false;
-          return wantedDates[0] === match[1];
-        });
+        const today = allFestivalDays.filter(
+          day => wantedDates[0] === day.isoDate,
+        );
         setFestivalDays(today);
         // Schedule notification for 6AM using Notifee
         if (today.length > 0) {
@@ -179,27 +177,31 @@ const App = () => {
   }, []);
 
   // Compute next-2-days entries that actually have festivals
-  const allDays: FestivalDay[] = require('./assets/festivals.json');
   const wantedDates = getTodayAndNextTwoDates();
-  const nextTwoDaysWithFestivals = allDays.filter(day => {
-    const match = day.date.match(/\((\d{4}-\d{2}-\d{2})\)/);
-    if (!match) return false;
-    const isNextTwo = wantedDates.slice(1).includes(match[1]);
-    return (
-      isNextTwo && Array.isArray(day.festivals) && day.festivals.length > 0
-    );
-  });
+  const nextTwoDaysWithFestivals = allFestivalDays.filter(
+    day =>
+      wantedDates.slice(1).includes(day.isoDate) && day.festivals.length > 0,
+  );
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor: isDarkMode ? '#111827' : '#f5f7fb' },
+      ]}
+    >
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <Text style={styles.header}>{language.appTitle}</Text>
-      {/* Widget UI moved to WidgetView component */}
-      {error ? (
-        <Text style={{ color: 'red', textAlign: 'center', marginTop: 20 }}>
-          {error}
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text
+          style={[styles.header, { color: isDarkMode ? '#f8fafc' : '#1d2433' }]}
+        >
+          {language.appTitle}
         </Text>
-      ) : (
+        {error && <Text style={styles.errorText}>{error}</Text>}
+        <FestivalCalendar
+          festivalDays={allFestivalDays}
+          isDarkMode={isDarkMode}
+        />
         <WidgetView
           festivalDays={festivalDays}
           nextTwoDaysWithFestivals={nextTwoDaysWithFestivals}
@@ -218,7 +220,7 @@ const App = () => {
             setShowWidgetHint(false);
           }}
         />
-      )}
+      </ScrollView>
     </View>
   );
 };

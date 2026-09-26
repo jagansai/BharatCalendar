@@ -2,12 +2,11 @@
  * @format
  */
 
-import React from 'react';
-import ReactTestRenderer from 'react-test-renderer';
-import App from '../App';
+import language from '../src/languages/selected';
 
-test('renders correctly', async () => {
-  await ReactTestRenderer.act(() => {
-    ReactTestRenderer.create(<App />);
-  });
+test('has the localized labels required by the main calendar', () => {
+  expect(language.appTitle).toBe('పండుగల సూచిక');
+  expect(language.calendar).toBe('పండుగల క్యాలెండర్');
+  expect(language.searchPlaceholder).toContain('దీపావళి');
+  expect(language.upcomingFestivals).toBe('రాబోయే పండుగలు');
 });

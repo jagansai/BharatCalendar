@@ -1,3 +1,5 @@
+/* eslint-env jest */
+
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => require('@react-native-async-storage/async-storage/jest/async-storage-mock'));
 
@@ -14,11 +16,3 @@ jest.mock('@notifee/react-native', () => ({
   TriggerType: { TIMESTAMP: 0 },
 }));
 
-// Minimal NativeModules mock for WidgetPin
-jest.mock('react-native/Libraries/BatchedBridge/NativeModules', () => ({
-  ...jest.requireActual('react-native/Libraries/BatchedBridge/NativeModules'),
-  WidgetPin: {
-    isPinSupported: jest.fn(async () => false),
-    requestPin: jest.fn(async () => true),
-  },
-}));

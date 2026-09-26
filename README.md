@@ -1,6 +1,9 @@
-# Telugu Festival Reminder
-This app reminds users of upcoming Telugu festivals. Main features include:
-- Widget support for displaying week, thidhi, name of the year and festival ( if it is on current day )
+# Festival Index
+This app helps users browse and find festivals offline. Main features include:
+- A month calendar with color-highlighted festival days and selectable day details
+- Festival search with upcoming occurrences shown first
+- An upcoming-festivals list with days remaining
+- Widget support for displaying thidhi, name of the year and today’s festival
 
 
 # Getting Started
