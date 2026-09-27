@@ -7,47 +7,76 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
+import android.text.SpannableStringBuilder
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.util.TypedValue
 import android.widget.RemoteViews
 import java.util.Calendar
-import android.text.Html
-import android.os.Build
 
 class FestivalWidgetProvider : AppWidgetProvider() {
+
+    private fun categoryColor(category: String): Int {
+        return when (WidgetUtils.normalizeCategory(category)) {
+            "regionalHoliday" -> Color.parseColor("#5EEAD4")
+            "nationalDay" -> Color.parseColor("#60A5FA")
+            "vratam" -> Color.parseColor("#C4B5FD")
+            else -> Color.parseColor("#FDBA74")
+        }
+    }
 
     private fun renderWidgets(context: Context, appWidgetManager: AppWidgetManager, widgetIds: IntArray) {
         val info = WidgetUtils.getWidgetInfo(context)
         for (widgetId in widgetIds) {
             val views = RemoteViews(context.packageName, R.layout.festival_widget)
-            // Date
             val labels = WidgetUtils.getLabels(context)
-            views.setTextViewText(R.id.tvDate, "${labels.today}: ${info.date}")
-            // Thidi
-            views.setTextViewText(R.id.tvThidi, "${labels.thidi}: ${info.thidi}")
-            // Year
-            views.setTextViewText(R.id.tvYear, "${labels.year}: ${info.year}")
-            // Festivals today
-            if (info.todayFestivals.isNotEmpty()) {
+
+            val hasTodayEvent = info.todayFestivals.isNotEmpty()
+            if (hasTodayEvent) {
+                // On an event day, keep the widget focused on the event name only.
+                views.setViewVisibility(R.id.tvDate, android.view.View.GONE)
+                views.setViewVisibility(R.id.tvYear, android.view.View.GONE)
+                views.setViewVisibility(R.id.tvThidi, android.view.View.GONE)
+                views.setViewVisibility(R.id.tvNext, android.view.View.GONE)
                 views.setViewVisibility(R.id.tvFestivals, android.view.View.VISIBLE)
-                val festivalsText = "${labels.festivals}: " + info.todayFestivals.joinToString(", ") { fest -> "<font color='#ffd74f'>${fest}</font>" }
-                val spanned = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) Html.fromHtml(festivalsText, Html.FROM_HTML_MODE_LEGACY) else Html.fromHtml(festivalsText)
-                views.setTextViewText(R.id.tvFestivals, spanned)
+                views.setTextViewText(R.id.tvFestivals, info.todayFestivals.joinToString("\n"))
+                views.setTextColor(R.id.tvFestivals, categoryColor(info.todayCategory))
+                val festivalTextSize = if (WidgetUtils.normalizeCategory(info.todayCategory) == "festival") 25f else 19f
+                views.setTextViewTextSize(
+                    R.id.tvFestivals,
+                    TypedValue.COMPLEX_UNIT_SP,
+                    festivalTextSize
+                )
             } else {
+                // On ordinary days, retain the date details and show upcoming events.
+                views.setViewVisibility(R.id.tvDate, android.view.View.VISIBLE)
+                views.setViewVisibility(R.id.tvYear, android.view.View.VISIBLE)
+                views.setViewVisibility(R.id.tvThidi, android.view.View.VISIBLE)
+                views.setTextViewText(R.id.tvDate, "${labels.today}: ${info.date}")
+                views.setTextViewText(R.id.tvThidi, "${labels.thidi}: ${info.thidi}")
+                views.setTextViewText(R.id.tvYear, "${labels.year}: ${info.year}")
                 views.setViewVisibility(R.id.tvFestivals, android.view.View.GONE)
             }
-            // Next days
-            if (info.nextLines.isNotEmpty()) {
+
+            if (!hasTodayEvent && info.nextLines.isNotEmpty()) {
                 views.setViewVisibility(R.id.tvNext, android.view.View.VISIBLE)
-                // Each next line already formatted as "Date: Festival"; color festival part red
-                val coloredLines = info.nextLines.joinToString("\n") { line ->
-                    val idx = line.indexOf(": ")
-                    if (idx >= 0) {
-                        val left = line.substring(0, idx + 2)
-                        val fest = line.substring(idx + 2)
-                        "${left}<font color='#ffd74f'>${fest}</font>"
-                    } else line
+                val coloredLines = SpannableStringBuilder()
+                info.nextLines.forEachIndexed { index, line ->
+                    if (index > 0) coloredLines.append("\n")
+                    val lineStart = coloredLines.length
+                    coloredLines.append(line.text)
+                    val separatorIndex = line.text.indexOf(": ")
+                    if (separatorIndex >= 0) {
+                        coloredLines.setSpan(
+                            ForegroundColorSpan(categoryColor(line.category)),
+                            lineStart + separatorIndex + 2,
+                            coloredLines.length,
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+                        )
+                    }
                 }
-                val sp = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) Html.fromHtml(coloredLines, Html.FROM_HTML_MODE_LEGACY) else Html.fromHtml(coloredLines)
-                views.setTextViewText(R.id.tvNext, sp)
+                views.setTextViewText(R.id.tvNext, coloredLines)
             } else {
                 views.setViewVisibility(R.id.tvNext, android.view.View.GONE)
             }

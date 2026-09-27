@@ -16,7 +16,7 @@ Increment the version number following semantic versioning (major.minor.patch).
 ```json
 {
   "name": "TeluguFestivalReminderClean",
-   "version": "1.2.6",  // ← Update this (e.g., 1.2.5 → 1.2.6)
+   "version": "1.2.7",  // ← Update this (e.g., 1.2.6 → 1.2.7)
   "private": true,
   ...
 }
@@ -40,8 +40,8 @@ android {
         applicationId "com.telugufestivalreminderclean"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-         versionCode 9           // ← Increment by 1 (e.g., 8 → 9) - REQUIRED
-         versionName "1.2.6"     // ← Match package.json version
+         versionCode 10          // ← Increment by 1 (e.g., 9 → 10) - REQUIRED
+         versionName "1.2.7"     // ← Match package.json version
     }
     ...
 }
@@ -84,9 +84,9 @@ Use the build script to create a release AAB (Android App Bundle) for Play Store
 
 ## Quick Reference Checklist
 
-- [ ] Update `package.json` version (e.g., 1.2.5 → 1.2.6)
-- [ ] Update `android/app/build.gradle` versionCode (e.g., 8 → 9)
-- [ ] Update `android/app/build.gradle` versionName (e.g., "1.2.5" → "1.2.6")
+- [ ] Update `package.json` and `package-lock.json` version to 1.2.7
+- [ ] Update `android/app/build.gradle` versionCode to 10
+- [ ] Update `android/app/build.gradle` versionName to "1.2.7"
 - [ ] Run build command: `.\scripts\build-android.ps1 -Release -FestivalsToken <token>`
 - [ ] Verify AAB created: `android/app/build/outputs/bundle/release/app-release.aab`
 - [ ] Upload AAB to Google Play Console
@@ -95,18 +95,19 @@ Use the build script to create a release AAB (Android App Bundle) for Play Store
 
 ## Example Release Cycle
 
-**Scenario:** Updating festival data for 2026
+**Scenario:** Updating festival data for 2026 and widget behavior
 
 1. **Version Update:**
-   - Current: 1.2.5 (versionCode 8)
-   - New: 1.2.6 (versionCode 9)
+   - Current: 1.2.6 (versionCode 9)
+   - New: 1.2.7 (versionCode 10)
 
 2. **Files to Edit:**
    ```
-   package.json:          "version": "1.2.6"
+   package.json:          "version": "1.2.7"
+   package-lock.json:     root version "1.2.7"
    android/app/build.gradle:
-      versionCode 9
-      versionName "1.2.6"
+      versionCode 10
+      versionName "1.2.7"
    ```
 
 3. **Build Command:**
@@ -115,7 +116,7 @@ Use the build script to create a release AAB (Android App Bundle) for Play Store
    ```
 
 4. **Result:**
-   - AAB with version 1.2.6 (versionCode 9) ready for Play Store
+   - AAB with version 1.2.7 (versionCode 10) ready for Play Store
 
 ## Troubleshooting
 

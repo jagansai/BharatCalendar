@@ -11,6 +11,7 @@ import { formatDateFromIso } from '../utils/date';
 import {
   dateFromIso,
   differenceInCalendarDays,
+  FestivalCategory,
   FestivalDay,
   getMonthKey,
   getTodayIsoDate,
@@ -35,6 +36,7 @@ type Palette = {
   today: string;
   todaySoft: string;
   input: string;
+  categories: Record<FestivalCategory, { accent: string; soft: string }>;
 };
 
 const lightPalette: Palette = {
@@ -48,6 +50,13 @@ const lightPalette: Palette = {
   today: '#2563eb',
   todaySoft: '#eff6ff',
   input: '#f8fafc',
+  categories: {
+    festival: { accent: '#b45309', soft: '#ffedd5' },
+    regionalHoliday: { accent: '#0f766e', soft: '#ccfbf1' },
+    nationalDay: { accent: '#1d4ed8', soft: '#dbeafe' },
+    vratam: { accent: '#7c3aed', soft: '#ede9fe' },
+    utsavam: { accent: '#7c3aed', soft: '#ede9fe' },
+  },
 };
 
 const darkPalette: Palette = {
@@ -61,7 +70,18 @@ const darkPalette: Palette = {
   today: '#93c5fd',
   todaySoft: '#1e3a5f',
   input: '#111827',
+  categories: {
+    festival: { accent: '#fdba74', soft: '#51331c' },
+    regionalHoliday: { accent: '#5eead4', soft: '#134e4a' },
+    nationalDay: { accent: '#60a5fa', soft: '#172554' },
+    vratam: { accent: '#c4b5fd', soft: '#3b1d5f' },
+    utsavam: { accent: '#c4b5fd', soft: '#3b1d5f' },
+  },
 };
+
+function getCategoryColors(palette: Palette, category: FestivalCategory) {
+  return palette.categories[category] || palette.categories.festival;
+}
 
 function getMonthCells(month: Date): Array<string | null> {
   const year = month.getFullYear();
@@ -80,12 +100,12 @@ function getMonthCells(month: Date): Array<string | null> {
   });
 }
 
-export default function FestivalCalendar({
-  festivalDays,
-  isDarkMode,
-}: Props) {
+export default function FestivalCalendar({ festivalDays, isDarkMode }: Props) {
   const palette = isDarkMode ? darkPalette : lightPalette;
-  const sortedDays = useMemo(() => sortFestivalDays(festivalDays), [festivalDays]);
+  const sortedDays = useMemo(
+    () => sortFestivalDays(festivalDays),
+    [festivalDays],
+  );
   const daysByIsoDate = useMemo(
     () => new Map(sortedDays.map(day => [day.isoDate, day])),
     [sortedDays],
@@ -115,13 +135,20 @@ export default function FestivalCalendar({
     todayIsoDate,
   );
   const upcomingFestivalDays = sortedDays
-    .filter(
-      day => day.isoDate >= todayIsoDate && day.festivals.length > 0,
-    )
+    .filter(day => day.isoDate >= todayIsoDate && day.festivals.length > 0)
     .slice(0, 6);
   const festivalDaysThisMonth = sortedDays.filter(
     day => day.isoDate.startsWith(monthKey) && day.festivals.length > 0,
   ).length;
+  const categoryLegend: Array<{ category: FestivalCategory; label: string }> = [
+    { category: 'festival', label: language.festivalDay },
+    {
+      category: 'regionalHoliday',
+      label: language.categoryRegionalHoliday,
+    },
+    { category: 'nationalDay', label: language.categoryNationalDay },
+    { category: 'vratam', label: language.categoryVratam },
+  ];
 
   const selectDay = (day: FestivalDay) => {
     const date = dateFromIso(day.isoDate);
@@ -152,9 +179,7 @@ export default function FestivalCalendar({
   const goToToday = () => {
     const today = dateFromIso(todayIsoDate) || new Date();
     setVisibleMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-    setSelectedIsoDate(
-      daysByIsoDate.has(todayIsoDate) ? todayIsoDate : null,
-    );
+    setSelectedIsoDate(daysByIsoDate.has(todayIsoDate) ? todayIsoDate : null);
   };
 
   return (
@@ -179,7 +204,9 @@ export default function FestivalCalendar({
           onPress={goToToday}
           style={[styles.todayButton, { backgroundColor: palette.todaySoft }]}
         >
-          <Text style={[styles.todayButtonText, { color: palette.today }]}>{language.today}</Text>
+          <Text style={[styles.todayButtonText, { color: palette.today }]}>
+            {language.today}
+          </Text>
         </Pressable>
       </View>
 
@@ -218,19 +245,27 @@ export default function FestivalCalendar({
                 onPress={() => selectDay(day)}
                 style={[
                   styles.searchResult,
-                  { backgroundColor: palette.card, borderColor: palette.border },
+                  {
+                    backgroundColor: palette.card,
+                    borderColor: palette.border,
+                  },
                 ]}
               >
                 <Text
                   numberOfLines={2}
-                  style={[styles.searchFestival, { color: palette.accent }]}
+                  style={[
+                    styles.searchFestival,
+                    { color: getCategoryColors(palette, day.category).accent },
+                  ]}
                 >
                   {day.festivals.join(' • ')}
                 </Text>
                 <Text style={[styles.searchDate, { color: palette.text }]}>
                   {formatDateFromIso(day.isoDate, language)}
                 </Text>
-                <Text style={[styles.searchThidi, { color: palette.mutedText }]}>
+                <Text
+                  style={[styles.searchThidi, { color: palette.mutedText }]}
+                >
                   {day.Thidi}
                 </Text>
               </Pressable>
@@ -250,10 +285,13 @@ export default function FestivalCalendar({
               onPress={() => changeMonth(-1)}
               style={[styles.monthButton, { borderColor: palette.border }]}
             >
-              <Text style={[styles.monthButtonText, { color: palette.text }]}>‹</Text>
+              <Text style={[styles.monthButtonText, { color: palette.text }]}>
+                ‹
+              </Text>
             </Pressable>
             <Text style={[styles.monthTitle, { color: palette.text }]}>
-              {language.months[visibleMonth.getMonth()]} {visibleMonth.getFullYear()}
+              {language.months[visibleMonth.getMonth()]}{' '}
+              {visibleMonth.getFullYear()}
             </Text>
             <Pressable
               accessibilityLabel={language.nextMonth}
@@ -261,7 +299,9 @@ export default function FestivalCalendar({
               onPress={() => changeMonth(1)}
               style={[styles.monthButton, { borderColor: palette.border }]}
             >
-              <Text style={[styles.monthButtonText, { color: palette.text }]}>›</Text>
+              <Text style={[styles.monthButtonText, { color: palette.text }]}>
+                ›
+              </Text>
             </Pressable>
           </View>
 
@@ -284,6 +324,10 @@ export default function FestivalCalendar({
 
               const day = daysByIsoDate.get(isoDate);
               const hasFestival = Boolean(day && day.festivals.length > 0);
+              const categoryColors = getCategoryColors(
+                palette,
+                day?.category || 'festival',
+              );
               const isToday = isoDate === todayIsoDate;
               const isSelected = isoDate === selectedIsoDate;
 
@@ -298,8 +342,8 @@ export default function FestivalCalendar({
                     styles.dayCell,
                     { borderColor: palette.border },
                     hasFestival && {
-                      backgroundColor: palette.accentSoft,
-                      borderColor: palette.accent,
+                      backgroundColor: categoryColors.soft,
+                      borderColor: categoryColors.accent,
                     },
                     isToday && {
                       borderColor: palette.today,
@@ -313,7 +357,10 @@ export default function FestivalCalendar({
                     style={[
                       styles.dayNumber,
                       { color: day ? palette.text : palette.mutedText },
-                      hasFestival && { color: palette.accent, fontWeight: '800' },
+                      hasFestival && {
+                        color: categoryColors.accent,
+                        fontWeight: '800',
+                      },
                       isToday && { color: palette.today },
                     ]}
                   >
@@ -321,7 +368,10 @@ export default function FestivalCalendar({
                   </Text>
                   {hasFestival && (
                     <View
-                      style={[styles.festivalDot, { backgroundColor: palette.accent }]}
+                      style={[
+                        styles.festivalDot,
+                        { backgroundColor: categoryColors.accent },
+                      ]}
                     />
                   )}
                 </Pressable>
@@ -330,19 +380,35 @@ export default function FestivalCalendar({
           </View>
 
           <View style={styles.legendRow}>
-            <View style={styles.legendItem}>
-              <View
-                style={[styles.legendSwatch, { backgroundColor: palette.accentSoft }]}
-              />
-              <Text style={[styles.legendText, { color: palette.mutedText }]}>
-                {language.festivalDay}
-              </Text>
-            </View>
+            {categoryLegend.map(({ category, label }) => {
+              const categoryColors = getCategoryColors(palette, category);
+              return (
+                <View key={category} style={styles.legendItem}>
+                  <View
+                    style={[
+                      styles.legendSwatch,
+                      {
+                        backgroundColor: categoryColors.soft,
+                        borderColor: categoryColors.accent,
+                      },
+                    ]}
+                  />
+                  <Text
+                    style={[styles.legendText, { color: palette.mutedText }]}
+                  >
+                    {label}
+                  </Text>
+                </View>
+              );
+            })}
             <View style={styles.legendItem}>
               <View
                 style={[
                   styles.legendSwatch,
-                  { backgroundColor: palette.todaySoft, borderColor: palette.today },
+                  {
+                    backgroundColor: palette.todaySoft,
+                    borderColor: palette.today,
+                  },
                 ]}
               />
               <Text style={[styles.legendText, { color: palette.mutedText }]}>
@@ -362,13 +428,31 @@ export default function FestivalCalendar({
             </Text>
             {selectedDay ? (
               <>
-                <Text style={[styles.detailDate, { color: palette.accent }]}>{formatDateFromIso(selectedDay.isoDate, language)}</Text>
-                <Text style={[styles.detailValue, { color: palette.text }]}><Text style={styles.detailLabel}>{language.thidi}: </Text>{selectedDay.Thidi}</Text>
+                <Text
+                  style={[
+                    styles.detailDate,
+                    {
+                      color: getCategoryColors(palette, selectedDay.category)
+                        .accent,
+                    },
+                  ]}
+                >
+                  {formatDateFromIso(selectedDay.isoDate, language)}
+                </Text>
+                <Text style={[styles.detailValue, { color: palette.text }]}>
+                  <Text style={styles.detailLabel}>{language.thidi}: </Text>
+                  {selectedDay.Thidi}
+                </Text>
                 <Text style={[styles.detailValue, { color: palette.text }]}>
                   <Text style={styles.detailLabel}>{language.year}: </Text>
                   {selectedDay.year}
                 </Text>
-                <Text style={[styles.detailValue, { color: palette.text }]}><Text style={styles.detailLabel}>{language.festivals}: </Text>{selectedDay.festivals.length > 0 ? selectedDay.festivals.join(' • ') : language.noFestivalData}</Text>
+                <Text style={[styles.detailValue, { color: palette.text }]}>
+                  <Text style={styles.detailLabel}>{language.festivals}: </Text>
+                  {selectedDay.festivals.length > 0
+                    ? selectedDay.festivals.join(' • ')
+                    : language.noFestivalData}
+                </Text>
               </>
             ) : (
               <Text style={[styles.emptyText, { color: palette.mutedText }]}>
@@ -383,13 +467,16 @@ export default function FestivalCalendar({
             </Text>
             {upcomingFestivalDays.length > 0 ? (
               upcomingFestivalDays.map(day => {
-                const daysAway = differenceInCalendarDays(todayIsoDate, day.isoDate);
+                const daysAway = differenceInCalendarDays(
+                  todayIsoDate,
+                  day.isoDate,
+                );
                 const timing =
                   daysAway === 0
                     ? language.today
                     : daysAway === null
-                      ? ''
-                      : `${daysAway} ${language.daysUntil}`;
+                    ? ''
+                    : `${daysAway} ${language.daysUntil}`;
 
                 return (
                   <Pressable
@@ -402,14 +489,31 @@ export default function FestivalCalendar({
                     ]}
                   >
                     <View style={styles.upcomingCopy}>
-                      <Text style={[styles.upcomingFestival, { color: palette.accent }]}>
+                      <Text
+                        style={[
+                          styles.upcomingFestival,
+                          {
+                            color: getCategoryColors(palette, day.category)
+                              .accent,
+                          },
+                        ]}
+                      >
                         {day.festivals.join(' • ')}
                       </Text>
-                      <Text style={[styles.upcomingDate, { color: palette.mutedText }]}>
+                      <Text
+                        style={[
+                          styles.upcomingDate,
+                          { color: palette.mutedText },
+                        ]}
+                      >
                         {formatDateFromIso(day.isoDate, language)}
                       </Text>
                     </View>
-                    <Text style={[styles.upcomingTiming, { color: palette.today }]}>{timing}</Text>
+                    <Text
+                      style={[styles.upcomingTiming, { color: palette.today }]}
+                    >
+                      {timing}
+                    </Text>
                   </Pressable>
                 );
               })
@@ -503,17 +607,55 @@ const styles = StyleSheet.create({
     marginHorizontal: '0.7%',
     width: '12.8857%',
   },
-  selectedDayCell: { shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.18, shadowRadius: 2, elevation: 2 },
+  selectedDayCell: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.18,
+    shadowRadius: 2,
+    elevation: 2,
+  },
   unavailableDayCell: { opacity: 0.45 },
   dayNumber: { fontSize: 15, fontWeight: '600' },
   festivalDot: { borderRadius: 3, height: 5, marginTop: 4, width: 5 },
-  legendRow: { flexDirection: 'row', marginBottom: 15, marginTop: 6 },
-  legendItem: { alignItems: 'center', flexDirection: 'row', marginRight: 16 },
-  legendSwatch: { borderRadius: 4, borderWidth: 1, height: 12, marginRight: 5, width: 12 },
+  legendRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 15,
+    marginTop: 6,
+  },
+  legendItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginBottom: 5,
+    marginRight: 16,
+  },
+  legendSwatch: {
+    borderRadius: 4,
+    borderWidth: 1,
+    height: 12,
+    marginRight: 5,
+    width: 12,
+  },
   legendText: { fontSize: 11 },
-  detailsCard: { borderRadius: 12, borderWidth: 1, marginBottom: 18, padding: 13 },
-  detailDate: { fontSize: 16, fontWeight: '800', marginBottom: 7 },
-  detailValue: { fontSize: 14, lineHeight: 21 },
+  detailsCard: {
+    alignSelf: 'stretch',
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 18,
+    padding: 13,
+  },
+  detailDate: {
+    flexShrink: 1,
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 7,
+  },
+  detailValue: {
+    alignSelf: 'stretch',
+    flexShrink: 1,
+    fontSize: 14,
+    lineHeight: 21,
+  },
   detailLabel: { fontWeight: '800' },
   upcomingSection: { marginBottom: 2 },
   upcomingRow: {

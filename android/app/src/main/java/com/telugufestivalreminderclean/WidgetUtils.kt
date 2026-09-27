@@ -24,7 +24,13 @@ object WidgetUtils {
         val thidi: String,
         val year: String,
         val todayFestivals: List<String>,
-        val nextLines: List<String>
+        val todayCategory: String,
+        val nextLines: List<NextFestival>
+    )
+
+    data class NextFestival(
+        val text: String,
+        val category: String
     )
     fun readFestivalData(context: Context): List<FestivalDay> {
         val json = try {
@@ -46,6 +52,17 @@ object WidgetUtils {
     }
 
     fun getLabels(context: Context): LocaleConfig = readLocale(context)
+
+    fun normalizeCategory(value: String?): String {
+        val normalized = value?.trim()?.lowercase(Locale.ROOT)?.replace(Regex("[\\s/_-]+"), "")
+            ?: return "festival"
+        return when (normalized) {
+            "regional", "regionalholiday", "holiday" -> "regionalHoliday"
+            "national", "nationalday" -> "nationalDay"
+            "observance", "vratam", "vratamobservance", "utsavam" -> "vratam"
+            else -> "festival"
+        }
+    }
 
     private fun getTodayAndNextTwoDates(): List<String> {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -122,15 +139,19 @@ object WidgetUtils {
         val thidi = todayDay?.Thidi ?: ""
         val year = todayDay?.year ?: ""
         val todayFestivals = todayDay?.festivals?.filter { it.isNotBlank() } ?: emptyList()
+        val todayCategory = normalizeCategory(todayDay?.category)
 
-        val nextLines = mutableListOf<String>()
+        val nextLines = mutableListOf<NextFestival>()
         listOf(next1Iso, next2Iso).forEach { iso ->
             val d = findDayByIso(iso)
             if (d != null) {
                 val fests = d.festivals.filter { it.isNotBlank() }
                 if (fests.isNotEmpty()) {
                     val entryIso = extractIsoDate(d.date) ?: iso
-                    nextLines += "${formatDateFromIso(entryIso, language)}: ${fests.first()}"
+                    nextLines += NextFestival(
+                        text = "${formatDateFromIso(entryIso, language)}: ${fests.first()}",
+                        category = normalizeCategory(d.category)
+                    )
                 }
             }
         }
@@ -140,6 +161,7 @@ object WidgetUtils {
             thidi = thidi,
             year = year,
             todayFestivals = todayFestivals,
+            todayCategory = todayCategory,
             nextLines = nextLines
         )
     }

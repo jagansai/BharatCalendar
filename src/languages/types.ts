@@ -30,6 +30,9 @@ export type LanguageConfig = {
   previousMonth: string;
   nextMonth: string;
   festivalDay: string;
+  categoryRegionalHoliday: string;
+  categoryNationalDay: string;
+  categoryVratam: string;
   dayDetails: string;
   selectDate: string;
   upcomingFestivals: string;

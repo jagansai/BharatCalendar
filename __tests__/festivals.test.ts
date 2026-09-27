@@ -30,7 +30,29 @@ describe('festival data helpers', () => {
       Thidi: 'ఆశ్వయుజ శుద్ధ దశమి',
       year: 'శ్రీ పరాభవ నామ సంవత్సరం',
       festivals: ['దసరా'],
+      category: 'festival',
     });
+  });
+
+  test('normalizes supported categories and defaults unknown values to festivals', () => {
+    expect(
+      parseFestivalDay({
+        date: '2 అక్టోబర్, 2026 (2026-10-02)',
+        category: 'National day',
+      }),
+    ).toEqual(expect.objectContaining({ category: 'nationalDay' }));
+    expect(
+      parseFestivalDay({
+        date: '21 ఆగష్టు, 2026 (2026-08-21)',
+        category: 'Vratam/observance',
+      }),
+    ).toEqual(expect.objectContaining({ category: 'vratam' }));
+    expect(
+      parseFestivalDay({
+        date: '1 సెప్టెంబర్, 2026 (2026-09-01)',
+        category: 'not-a-category',
+      }),
+    ).toEqual(expect.objectContaining({ category: 'festival' }));
   });
 
   test('sorts dates chronologically without mutating the input', () => {

@@ -1,9 +1,17 @@
+export type FestivalCategory =
+  | 'festival'
+  | 'regionalHoliday'
+  | 'nationalDay'
+  | 'vratam'
+  | 'utsavam'
+
 export type FestivalDay = {
   date: string;
   isoDate: string;
   Thidi: string;
   year: string;
   festivals: string[];
+  category: FestivalCategory;
 };
 
 const ISO_DATE_PATTERN = /\((\d{4}-\d{2}-\d{2})\)/;
@@ -16,6 +24,28 @@ export function extractIsoDate(value: unknown): string | null {
   if (embeddedDate) return embeddedDate;
 
   return value.match(STANDALONE_ISO_DATE_PATTERN)?.[0] || null;
+}
+
+export function parseFestivalCategory(value: unknown): FestivalCategory {
+  if (typeof value !== 'string') return 'festival';
+
+  const normalized = value.trim().toLocaleLowerCase().replace(/[\s/_-]+/g, '');
+  switch (normalized) {
+    case 'regional':
+    case 'regionalholiday':
+    case 'holiday':
+      return 'regionalHoliday';
+    case 'national':
+    case 'nationalday':
+      return 'nationalDay';
+    case 'observance':
+    case 'vratam':
+    case 'vratamobservance':
+    case 'utsavam':
+      return 'vratam';
+    default:
+      return 'festival';
+  }
 }
 
 export function parseFestivalDay(value: unknown): FestivalDay | null {
@@ -39,6 +69,7 @@ export function parseFestivalDay(value: unknown): FestivalDay | null {
     Thidi: String(raw.Thidi ?? ''),
     year: String(raw.year ?? ''),
     festivals,
+    category: parseFestivalCategory(raw.category),
   };
 }
 
