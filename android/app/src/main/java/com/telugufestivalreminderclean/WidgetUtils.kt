@@ -23,9 +23,7 @@ object WidgetUtils {
         val date: String,
         val thidi: String,
         val year: String,
-        val todayFestivals: List<String>,
-        val todayCategory: String,
-        val nextLines: List<NextFestival>
+        val nearestEvent: NextFestival?
     )
 
     data class NextFestival(
@@ -128,8 +126,6 @@ object WidgetUtils {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
         val today = LocalDate.now()
         val todayIso = today.format(formatter)
-        val next1Iso = today.plusDays(1).format(formatter)
-        val next2Iso = today.plusDays(2).format(formatter)
 
         fun findDayByIso(iso: String): FestivalDay? =
             allDays.firstOrNull { extractIsoDate(it.date) == iso }
@@ -138,31 +134,27 @@ object WidgetUtils {
         val dateStr = if (todayDay != null) formatDateFromIso(extractIsoDate(todayDay.date) ?: todayIso, language) else formatDateFromIso(todayIso, language)
         val thidi = todayDay?.Thidi ?: ""
         val year = todayDay?.year ?: ""
-        val todayFestivals = todayDay?.festivals?.filter { it.isNotBlank() } ?: emptyList()
-        val todayCategory = normalizeCategory(todayDay?.category)
 
-        val nextLines = mutableListOf<NextFestival>()
-        listOf(next1Iso, next2Iso).forEach { iso ->
-            val d = findDayByIso(iso)
-            if (d != null) {
-                val fests = d.festivals.filter { it.isNotBlank() }
-                if (fests.isNotEmpty()) {
-                    val entryIso = extractIsoDate(d.date) ?: iso
-                    nextLines += NextFestival(
-                        text = "${formatDateFromIso(entryIso, language)}: ${fests.first()}",
-                        category = normalizeCategory(d.category)
-                    )
-                }
+        // Select the nearest event from today through the next two days.
+        val nearestEvent = (0..2).asSequence()
+            .mapNotNull { offset ->
+                val iso = today.plusDays(offset.toLong()).format(formatter)
+                val day = findDayByIso(iso) ?: return@mapNotNull null
+                val festivals = day.festivals.filter { it.isNotBlank() }
+                if (festivals.isEmpty()) return@mapNotNull null
+
+                NextFestival(
+                    text = festivals.first(),
+                    category = normalizeCategory(day.category)
+                )
             }
-        }
+            .firstOrNull()
 
         return WidgetInfo(
             date = dateStr,
             thidi = thidi,
             year = year,
-            todayFestivals = todayFestivals,
-            todayCategory = todayCategory,
-            nextLines = nextLines
+            nearestEvent = nearestEvent
         )
     }
 

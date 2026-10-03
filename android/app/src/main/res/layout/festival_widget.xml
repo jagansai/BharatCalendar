@@ -4,77 +4,50 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="10dp"
+    android:padding="4dp"
     android:background="@drawable/widget_bg">
 
-    <!-- Date (keep size same as before) -->
-    <TextView
-        android:id="@+id/tvDate"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="#FFFFFFFF"
-        android:textSize="15sp"
-        android:lineSpacingExtra="2dp"
-        android:fontFamily="sans-serif"
-        android:gravity="center"
-        android:paddingTop="2dp"
-        android:paddingBottom="2dp" />
-
-    <!-- Year (keep size same as before) -->
+    <!-- Current year -->
     <TextView
         android:id="@+id/tvYear"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="#FFFFFFFF"
-        android:textSize="15sp"
-        android:lineSpacingExtra="2dp"
+        android:textSize="12sp"
         android:fontFamily="sans-serif"
         android:gravity="center"
-        android:paddingTop="2dp"
-        android:paddingBottom="2dp" />
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:ellipsize="end" />
 
-    <!-- Thidi (increase font) -->
+    <!-- Current thidhi -->
     <TextView
         android:id="@+id/tvThidi"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="#FFFFFFFF"
-        android:textSize="18sp"
+        android:textSize="14sp"
         android:textStyle="bold"
-        android:lineSpacingExtra="2dp"
         android:fontFamily="sans-serif"
         android:gravity="center"
-        android:paddingTop="2dp"
-        android:paddingBottom="2dp" />
+        android:includeFontPadding="false"
+        android:maxLines="2"
+        android:ellipsize="end" />
 
 
-    <!-- Festivals today (increase font) -->
+    <!-- Nearest event today or within the next two days -->
     <TextView
         android:id="@+id/tvFestivals"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textColor="#FDBA74"
-        android:textSize="25sp"
+        android:textSize="16sp"
         android:textStyle="bold"
-        android:lineSpacingExtra="2dp"
         android:fontFamily="sans-serif"
         android:gravity="center"
-        android:paddingTop="4dp"
-        android:paddingBottom="2dp"
-        android:visibility="gone" />
-
-    <!-- Next two days (optional) -->
-    <TextView
-        android:id="@+id/tvNext"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textColor="#FFFFFFFF"
-        android:textSize="15sp"
-        android:lineSpacingExtra="2dp"
-        android:fontFamily="sans-serif"
-        android:gravity="center"
-        android:paddingTop="6dp"
-        android:paddingBottom="2dp"
+        android:includeFontPadding="false"
+        android:maxLines="1"
+        android:ellipsize="end"
         android:visibility="gone" />
 
 </LinearLayout>
